@@ -86,21 +86,42 @@ def build_teams_message(results: list[dict], has_issues: bool) -> dict:
     timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
     if has_issues:
-        header = f"🚨 **Service Outage Alert** — {timestamp}"
+        title = f"🚨 Service Outage Alert — {timestamp}"
+        title_color = "attention"
     else:
-        header = f"✅ **Hourly Service Check: All Systems Operational** — {timestamp}"
+        title = f"✅ Hourly Service Check: All Systems Operational — {timestamp}"
+        title_color = "good"
 
-    lines = [header, ""]
-
+    rows = []
     for r in results:
         emoji = INDICATOR_EMOJI.get(r["indicator"], "⚠️")
-        lines.append(f"{emoji} **{r['name']}**: {r['description']}")
+        rows.append({
+            "type": "ColumnSet",
+            "columns": [
+                {
+                    "type": "Column",
+                    "width": "auto",
+                    "items": [{"type": "TextBlock", "text": emoji, "wrap": False}]
+                },
+                {
+                    "type": "Column",
+                    "width": "stretch",
+                    "items": [{"type": "TextBlock", "text": f"**{r['name']}**: {r['description']}", "wrap": True}]
+                }
+            ]
+        })
 
-    if not has_issues:
-        lines.append("")
-        lines.append("_All 9 services are fully operational._")
+    body = [
+        {"type": "TextBlock", "text": title, "weight": "Bolder", "size": "Medium", "color": title_color, "wrap": True},
+        {"type": "TextBlock", "text": " ", "spacing": "Small"},
+    ] + rows
 
-    return {"text": "\n".join(lines)}
+    return {
+        "type": "AdaptiveCard",
+        "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+        "version": "1.2",
+        "body": body
+    }
 
 
 def post_to_teams(payload: dict) -> bool:
