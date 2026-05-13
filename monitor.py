@@ -87,52 +87,19 @@ def build_teams_message(results: list[dict], has_issues: bool) -> dict:
 
     if has_issues:
         title = f"🚨 Service Outage Alert — {timestamp}"
-        title_color = "attention"
     else:
         title = f"✅ Hourly Service Check: All Systems Operational — {timestamp}"
-        title_color = "good"
 
-    rows = []
+    lines = []
     for r in results:
         emoji = INDICATOR_EMOJI.get(r["indicator"], "⚠️")
-        rows.append({
-            "type": "ColumnSet",
-            "columns": [
-                {
-                    "type": "Column",
-                    "width": "auto",
-                    "items": [{"type": "TextBlock", "text": emoji, "wrap": False}]
-                },
-                {
-                    "type": "Column",
-                    "width": "stretch",
-                    "items": [{"type": "TextBlock", "text": f"**{r['name']}**: {r['description']}", "wrap": True}]
-                }
-            ]
-        })
+        lines.append(f"{emoji} {r['name']}: {r['description']}")
 
-    body = [
-        {"type": "TextBlock", "text": title, "weight": "Bolder", "size": "Medium", "color": title_color, "wrap": True},
-        {"type": "TextBlock", "text": " ", "spacing": "Small"},
-    ] + rows
+    body_text = title + "\n\n" + "\n".join(lines)
+    if not has_issues:
+        body_text += "\n\nAll 9 services are fully operational."
 
-    card = {
-        "type": "AdaptiveCard",
-        "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
-        "version": "1.2",
-        "body": body
-    }
-
-    # Power Automate "Send webhook alerts to a channel" expects Bot Framework message format
-    return {
-        "type": "message",
-        "attachments": [
-            {
-                "contentType": "application/vnd.microsoft.card.adaptive",
-                "content": card
-            }
-        ]
-    }
+    return {"text": body_text}
 
 
 def post_to_teams(payload: dict) -> bool:
