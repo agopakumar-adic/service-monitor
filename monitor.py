@@ -116,11 +116,22 @@ def build_teams_message(results: list[dict], has_issues: bool) -> dict:
         {"type": "TextBlock", "text": " ", "spacing": "Small"},
     ] + rows
 
-    return {
+    card = {
         "type": "AdaptiveCard",
         "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
         "version": "1.2",
         "body": body
+    }
+
+    # Power Automate "Send webhook alerts to a channel" expects Bot Framework message format
+    return {
+        "type": "message",
+        "attachments": [
+            {
+                "contentType": "application/vnd.microsoft.card.adaptive",
+                "content": card
+            }
+        ]
     }
 
 
