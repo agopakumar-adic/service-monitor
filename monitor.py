@@ -86,20 +86,41 @@ def build_teams_message(results: list[dict], has_issues: bool) -> dict:
     timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
     if has_issues:
-        title = f"🚨 Service Outage Alert — {timestamp}"
+        header = f"🚨 <b>Service Outage Alert</b> &mdash; {timestamp}"
     else:
-        title = f"✅ Hourly Service Check: All Systems Operational — {timestamp}"
+        header = f"✅ <b>Hourly Service Check: All Systems Operational</b> &mdash; {timestamp}"
 
-    lines = []
+    rows = ""
     for r in results:
         emoji = INDICATOR_EMOJI.get(r["indicator"], "⚠️")
-        lines.append(f"{emoji} {r['name']}: {r['description']}")
+        if r["indicator"] == "none":
+            color = "#107C10"   # green
+        elif r["indicator"] in ("major", "critical"):
+            color = "#D13438"   # red
+        else:
+            color = "#FF8C00"   # orange
 
-    body_text = title + "\n\n" + "\n".join(lines)
-    if not has_issues:
-        body_text += "\n\nAll 9 services are fully operational."
+        rows += (
+            f"<tr>"
+            f"<td style='padding:6px 12px;'>{emoji}</td>"
+            f"<td style='padding:6px 12px;'><b>{r['name']}</b></td>"
+            f"<td style='padding:6px 12px; color:{color};'>{r['description']}</td>"
+            f"</tr>"
+        )
 
-    return {"text": body_text}
+    table = (
+        f"<table style='border-collapse:collapse; width:100%;'>"
+        f"<thead><tr style='background:#F3F2F1;'>"
+        f"<th style='padding:6px 12px; text-align:left;'></th>"
+        f"<th style='padding:6px 12px; text-align:left;'>Service</th>"
+        f"<th style='padding:6px 12px; text-align:left;'>Status</th>"
+        f"</tr></thead>"
+        f"<tbody>{rows}</tbody>"
+        f"</table>"
+    )
+
+    html = f"{header}<br><br>{table}"
+    return {"text": html}
 
 
 def post_to_teams(payload: dict) -> bool:
